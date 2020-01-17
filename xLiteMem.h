@@ -3,6 +3,9 @@
 #include <TlHelp32.h>
 #include <tchar.h>
 
+// Expand byte pattern
+#define EXP(x) x, sizeof(x) - 1
+
 #define nCRecvPropSize 0x3C
 
 // CRecvProp struct offsets
@@ -120,13 +123,13 @@ DWORD GetModuleSize(DWORD dwPid, LPCTSTR lpName)
 
 	return dwSize;
 }
-PVOID ReadMem(HANDLE hProcess, DWORD dwAddr, LPVOID lpBuffer, DWORD dwSize)
+PVOID ReadMemory(HANDLE hProcess, DWORD dwAddr, LPVOID lpBuffer, DWORD dwSize)
 {
 	PVOID ret = 0;
 	BOOL status = ReadProcessMemory(hProcess, (LPCVOID)(dwAddr), lpBuffer ? lpBuffer : &ret, dwSize, NULL);
 	return lpBuffer ? (PVOID)status : ret;
 }
-BOOL WriteMem(HANDLE hProcess, DWORD dwAddr, LPCVOID lpBuffer, DWORD dwSize)
+BOOL WriteMemory(HANDLE hProcess, DWORD dwAddr, LPCVOID lpBuffer, DWORD dwSize)
 {
 	return WriteProcessMemory(hProcess, (LPVOID)(dwAddr), lpBuffer, dwSize, NULL);
 }
@@ -185,7 +188,7 @@ DWORD ChunkFindPattern(HANDLE hProcess, DWORD dwBase, DWORD dwSize, DWORD dwChun
 	for (; i < dwBase + dwSize; i += dwChunkSize, x += dwChunkSize)
 	{
 		PBYTE pbChunk = (PBYTE)malloc(dwChunkSize); // allocate space for chunk using defined size
-		if (ReadMem(hProcess, i, pbChunk, dwChunkSize)) // read and scan through current memory chunk
+		if (ReadMemory(hProcess, i, pbChunk, dwChunkSize)) // read and scan through current memory chunk
 		{
 			dwAddress = FindPattern(pbChunk,
 				i,
@@ -217,39 +220,39 @@ DWORD ChunkFindPattern(HANDLE hProcess, DWORD dwBase, DWORD dwSize, DWORD dwChun
 BOOL GetPropName(HANDLE hProcess, DWORD dwAddress, PVOID pBuffer)
 {
 	DWORD dwNameAddr;
-	return ReadMem(hProcess, dwAddress + m_pVarName, &dwNameAddr, sizeof(DWORD)) &&
-		ReadMem(hProcess, dwNameAddr, pBuffer, 128);
+	return ReadMemory(hProcess, dwAddress + m_pVarName, &dwNameAddr, sizeof(DWORD)) &&
+		ReadMemory(hProcess, dwNameAddr, pBuffer, 128);
 }
 DWORD GetDataTable(HANDLE hProcess, DWORD dwAddress)
 {
-	return (DWORD)ReadMem(hProcess, dwAddress + m_pDataTable, NULL, sizeof(DWORD));
+	return (DWORD)ReadMemory(hProcess, dwAddress + m_pDataTable, NULL, sizeof(DWORD));
 }
 int GetOffset(HANDLE hProcess, DWORD dwAddress)
 {
-	return (int)ReadMem(hProcess, dwAddress + m_iOffset, NULL, sizeof(int));
+	return (int)ReadMemory(hProcess, dwAddress + m_iOffset, NULL, sizeof(int));
 }
 DWORD GetPropById(HANDLE hProcess, DWORD dwAddress, int iIndex)
 {
-	DWORD dwPropAddr = (DWORD)ReadMem(hProcess, dwAddress + m_pProps, NULL, sizeof(DWORD));
+	DWORD dwPropAddr = (DWORD)ReadMemory(hProcess, dwAddress + m_pProps, NULL, sizeof(DWORD));
 	return (DWORD)(dwPropAddr + nCRecvPropSize * iIndex);
 }
 int GetPropCount(HANDLE hProcess, DWORD dwAddress)
 {
-	return (int)ReadMem(hProcess, dwAddress + m_nProps, NULL, sizeof(int));
+	return (int)ReadMemory(hProcess, dwAddress + m_nProps, NULL, sizeof(int));
 }
 BOOL GetTableName(HANDLE hProcess, DWORD dwAddress, PVOID pBuffer)
 {
 	DWORD dwNameAddr;
-	return ReadMem(hProcess, dwAddress + m_pNetTableName, &dwNameAddr, sizeof(DWORD)) &&
-		ReadMem(hProcess, dwNameAddr, pBuffer, 128);
+	return ReadMemory(hProcess, dwAddress + m_pNetTableName, &dwNameAddr, sizeof(DWORD)) &&
+		ReadMemory(hProcess, dwNameAddr, pBuffer, 128);
 }
-DWORD GetTable(HANDLE hProcess, DWORD dwAddress) // CClientClass
+DWORD GetTable(HANDLE hProcess, DWORD dwAddress)
 {
-	return (DWORD)ReadMem(hProcess, dwAddress + m_pRecvTable, NULL, sizeof(DWORD));
+	return (DWORD)ReadMemory(hProcess, dwAddress + m_pRecvTable, NULL, sizeof(DWORD));
 }
-DWORD GetNextClass(HANDLE hProcess, DWORD dwAddress) // CClientClass
+DWORD GetNextClass(HANDLE hProcess, DWORD dwAddress)
 {
-	return (DWORD)ReadMem(hProcess, dwAddress + m_pNext, NULL, sizeof(DWORD));
+	return (DWORD)ReadMemory(hProcess, dwAddress + m_pNext, NULL, sizeof(DWORD));
 }
 
 /*
